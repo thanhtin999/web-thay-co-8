@@ -11,6 +11,7 @@ import {
   LogOut,
   ChevronDown,
   Lock,
+  Cloud,
 } from 'lucide-react';
 import { AppData, UserAccount } from '../types';
 
@@ -24,6 +25,8 @@ interface HeaderProps {
   currentUser: UserAccount;
   onOpenProfile: () => void;
   onLogout: () => void;
+  cloudConnected?: boolean;
+  isCloudSyncing?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -35,6 +38,8 @@ export const Header: React.FC<HeaderProps> = ({
   currentUser,
   onOpenProfile,
   onLogout,
+  cloudConnected = true,
+  isCloudSyncing = false,
 }) => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -140,16 +145,49 @@ export const Header: React.FC<HeaderProps> = ({
               {data.soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
             </button>
 
-            {/* Backup / Restore Data Button */}
+            {/* Supabase Cloud & Data Manager Button */}
             <button
               id="header-data-manager-btn"
               type="button"
               onClick={onOpenDataModal}
-              className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs transition-all hover:border-slate-300 active:scale-95"
-              title="Quản lý sao lưu dữ liệu"
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold border shadow-2xs transition-all active:scale-95 ${
+                isCloudSyncing
+                  ? 'bg-amber-50 text-amber-900 border-amber-300'
+                  : cloudConnected
+                  ? 'bg-emerald-50/80 text-emerald-900 border-emerald-300 hover:bg-emerald-100/70'
+                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+              }`}
+              title={
+                isCloudSyncing
+                  ? 'Đang đồng bộ dữ liệu lên Supabase Cloud...'
+                  : cloudConnected
+                  ? 'Supabase Cloud: Đã kết nối & Đồng bộ an toàn (Bấm để xem)'
+                  : 'Quản lý sao lưu dữ liệu & Supabase'
+              }
             >
-              <Database className="w-4 h-4 text-blue-600 shrink-0" />
-              <span className="hidden md:inline">Sao lưu</span>
+              <div className="relative flex items-center justify-center">
+                <Cloud
+                  className={`w-4 h-4 shrink-0 ${
+                    isCloudSyncing
+                      ? 'text-amber-600 animate-pulse'
+                      : cloudConnected
+                      ? 'text-emerald-600'
+                      : 'text-slate-500'
+                  }`}
+                />
+                <span
+                  className={`absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full ${
+                    isCloudSyncing
+                      ? 'bg-amber-500 animate-ping'
+                      : cloudConnected
+                      ? 'bg-emerald-500'
+                      : 'bg-slate-400'
+                  }`}
+                />
+              </div>
+              <span className="hidden sm:inline font-bold">
+                {isCloudSyncing ? 'Đang đồng bộ...' : 'Supabase Cloud'}
+              </span>
             </button>
 
             {/* User Account Dropdown Menu */}

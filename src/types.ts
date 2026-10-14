@@ -80,6 +80,30 @@ export interface ActivityLog {
   action: string; // Mô tả ngắn gọn: e.g. "Đã thêm học sinh Nguyễn Văn An"
 }
 
+export type DocumentCategory = 'Giáo án' | 'Đề kiểm tra' | 'Tài liệu đọc thêm' | 'Phiếu học tập' | 'Khác';
+
+export interface TeacherDocument {
+  id: string;
+  title: string;
+  fileName: string;
+  fileSize: number;
+  fileType: string;
+  fileUrl: string;
+  storagePath: string;
+  uploadedAt: string;
+  category: DocumentCategory;
+  classId?: string;
+  lessonId?: string;
+  note?: string;
+}
+
+export interface SupabaseConfig {
+  url: string;
+  anonKey: string;
+  autoSync: boolean;
+  lastSyncedAt?: string;
+}
+
 export interface AppData {
   classes: ClassItem[];
   students: Student[];
@@ -88,6 +112,7 @@ export interface AppData {
   grades: GradeEntry[];
   comments: StudentComment[];
   activityLogs: ActivityLog[];
+  documents?: TeacherDocument[];
   soundEnabled: boolean;
 }
 
@@ -114,5 +139,7 @@ export type NavTab =
   | 'grades' 
   | 'progress' 
   | 'comments' 
-  | 'stats';
+  | 'stats'
+  | 'documents';
+
 

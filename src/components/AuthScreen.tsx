@@ -19,6 +19,11 @@ import {
 } from 'lucide-react';
 import { UserAccount } from '../types';
 import { loginUser, registerUser, getUsers } from '../services/storage';
+import {
+  fetchAccountsFromSupabase,
+  findAccountInSupabase,
+  saveAccountToSupabase,
+} from '../services/supabase';
 
 interface AuthScreenProps {
   onLoginSuccess: (user: UserAccount, message?: string) => void;
@@ -50,15 +55,61 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
   const [showHelpModal, setShowHelpModal] = useState(false);
 
   // Quick accounts list for easy selection
-  const registeredUsers = getUsers();
+  const [registeredUsers, setRegisteredUsers] = useState<UserAccount[]>(() => getUsers());
 
-  const handleLogin = (e?: React.FormEvent) => {
+  // Tự động đồng bộ danh sách tài khoản từ Supabase khi mở màn hình
+  React.useEffect(() => {
+    let isMounted = true;
+    async function syncAccounts() {
+      try {
+        const remote = await fetchAccountsFromSupabase();
+        if (!isMounted) return;
+        if (remote && remote.length > 0) {
+          const local = getUsers();
+          const mergedMap = new Map<string, UserAccount>();
+          local.forEach((u) => mergedMap.set(u.username.toLowerCase(), u));
+          remote.forEach((u) => mergedMap.set(u.username.toLowerCase(), u));
+          const mergedList = Array.from(mergedMap.values());
+          localStorage.setItem('tro_ly_giao_vien_users_v1', JSON.stringify(mergedList));
+          setRegisteredUsers(mergedList);
+        }
+      } catch (err) {
+        console.warn('Lỗi đồng bộ tài khoản từ Supabase:', err);
+      }
+    }
+    syncAccounts();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setLoginError(null);
     setIsLoggingIn(true);
 
-    setTimeout(() => {
-      const res = loginUser(loginUsername, loginPassword);
+    try {
+      let res = loginUser(loginUsername, loginPassword);
+      if (!res.success) {
+        // Kiểm tra trên Supabase Cloud nếu tài khoản đăng ký ở thiết bị khác
+        const remoteUser = await findAccountInSupabase(loginUsername);
+        if (remoteUser) {
+          if (remoteUser.password === loginPassword.trim()) {
+            const local = getUsers();
+            if (!local.some((u) => u.id === remoteUser.id)) {
+              const updated = [...local, remoteUser];
+              localStorage.setItem('tro_ly_giao_vien_users_v1', JSON.stringify(updated));
+              setRegisteredUsers(updated);
+            }
+            res = loginUser(loginUsername, loginPassword);
+          } else {
+            setIsLoggingIn(false);
+            setLoginError('Mật khẩu không chính xác! Vui lòng thử lại.');
+            return;
+          }
+        }
+      }
+
       setIsLoggingIn(false);
 
       if (!res.success || !res.user) {
@@ -67,7 +118,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
       }
 
       onLoginSuccess(res.user, `Kính chào ${res.user.fullName}, chúc Thầy/Cô một ngày làm việc hiệu quả!`);
-    }, 200);
+    } catch {
+      setIsLoggingIn(false);
+      setLoginError('Đã có lỗi xảy ra trong quá trình xác thực.');
+    }
   };
 
   const handleQuickLogin = (user: UserAccount) => {
@@ -83,7 +137,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
     }
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setRegError(null);
 
@@ -94,7 +148,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
 
     setIsRegistering(true);
 
-    setTimeout(() => {
+    try {
       const res = registerUser({
         username: regUsername,
         password: regPassword,
@@ -104,18 +158,24 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
         cloneSample: regCloneSample,
       });
 
-      setIsRegistering(false);
-
       if (!res.success || !res.user) {
+        setIsRegistering(false);
         setRegError(res.error || 'Đăng ký tài khoản thất bại!');
         return;
       }
 
+      // Lưu tài khoản đăng ký lên Supabase Cloud
+      await saveAccountToSupabase(res.user);
+
+      setIsRegistering(false);
       onLoginSuccess(
         res.user,
-        `Chúc mừng ${res.user.fullName} đã đăng ký tài khoản thành công!`
+        `Chúc mừng ${res.user.fullName} đã đăng ký tài khoản thành công và lưu trữ trên Supabase Cloud!`
       );
-    }, 250);
+    } catch {
+      setIsRegistering(false);
+      setRegError('Đã xảy ra lỗi khi tạo tài khoản.');
+    }
   };
 
   return (
@@ -498,6 +558,12 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
                     <span>{regError}</span>
                   </div>
                 )}
+
+                {/* Supabase Cloud Notice */}
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-50/90 border border-emerald-200 text-emerald-800 text-xs">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                  <span>Tài khoản mới sẽ được tự động lưu trữ trên <strong>Supabase Cloud</strong>.</span>
+                </div>
 
                 {/* Submit Register Button */}
                 <button

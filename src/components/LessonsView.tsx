@@ -11,7 +11,10 @@ import {
   Clock,
   CircleDashed,
   X,
-  Target
+  Target,
+  Paperclip,
+  ExternalLink,
+  Cloud
 } from 'lucide-react';
 import { Lesson, LessonStatus, AppData } from '../types';
 
@@ -284,6 +287,38 @@ export const LessonsView: React.FC<LessonsViewProps> = ({
                       {lesson.summary}
                     </div>
                   )}
+
+                  {/* Attached Documents on Supabase */}
+                  {(() => {
+                    const attachedDocs = (data.documents || []).filter(
+                      (d) => d.lessonId === lesson.id || (d.classId === lesson.classId && d.category === 'Giáo án')
+                    );
+                    if (attachedDocs.length === 0) return null;
+                    return (
+                      <div className="pt-2 border-t border-slate-100 space-y-1">
+                        <span className="text-[10px] font-bold text-emerald-800 flex items-center gap-1">
+                          <Cloud className="w-3 h-3 text-emerald-600" />
+                          Tài liệu trên Supabase ({attachedDocs.length}):
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {attachedDocs.slice(0, 2).map((doc) => (
+                            <a
+                              key={doc.id}
+                              href={doc.fileUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[10px] font-medium border border-emerald-200/80 transition-colors truncate max-w-[200px]"
+                              title={doc.title}
+                            >
+                              <Paperclip className="w-2.5 h-2.5 shrink-0" />
+                              <span className="truncate">{doc.title}</span>
+                              <ExternalLink className="w-2.5 h-2.5 shrink-0 opacity-70" />
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   <div className="flex items-center justify-between text-slate-500 pt-1">
                     <span className="flex items-center gap-1.5 text-[11px]">

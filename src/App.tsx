@@ -25,6 +25,11 @@ import {
   getActiveUser,
   logoutUser,
 } from './services/storage';
+import {
+  saveAppDataToSupabase,
+  loadAppDataFromSupabase,
+  checkSupabaseConnection,
+} from './services/supabase';
 
 // Modals & Layout
 import { Header } from './components/Header';
@@ -57,6 +62,10 @@ export default function App() {
   const [currentTab, setCurrentTab] = useState<NavTab>('overview');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
+  // Supabase Cloud Sync States
+  const [cloudConnected, setCloudConnected] = useState<boolean>(true);
+  const [isCloudSyncing, setIsCloudSyncing] = useState<boolean>(false);
+
   // Transient drill-down filters (e.g. filtering students when jumping from classes/overview)
   const [subFilter, setSubFilter] = useState<string | undefined>(undefined);
 
@@ -82,11 +91,57 @@ export default function App() {
   const [isDataModalOpen, setIsDataModalOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  // Synchronize state with LocalStorage for the current user whenever data changes
+  // Khởi động đồng bộ Supabase Cloud khi mở ứng dụng hoặc đổi tài khoản
   useEffect(() => {
-    if (currentUser) {
-      saveAppData(data, currentUser.username);
+    let isMounted = true;
+    const username = currentUser?.username || 'thaytin';
+
+    async function initCloudSync() {
+      try {
+        const status = await checkSupabaseConnection();
+        if (!isMounted) return;
+        setCloudConnected(status.connected);
+
+        if (status.connected && status.tableReady) {
+          // Kiểm tra xem Supabase đã có dữ liệu chưa
+          const cloudRes = await loadAppDataFromSupabase(username);
+          if (isMounted && cloudRes.data && cloudRes.data.classes && cloudRes.data.classes.length > 0) {
+            setData(cloudRes.data);
+            saveAppData(cloudRes.data, username);
+          } else if (isMounted) {
+            // Đẩy dữ liệu hiện tại lên Supabase lần đầu
+            saveAppDataToSupabase(data, username);
+          }
+        }
+      } catch (err) {
+        console.warn('Supabase init check notice:', err);
+      }
     }
+
+    initCloudSync();
+    return () => {
+      isMounted = false;
+    };
+  }, [currentUser?.username]);
+
+  // Synchronize state with LocalStorage immediately and debounce sync to Supabase Cloud
+  useEffect(() => {
+    if (!currentUser) return;
+    saveAppData(data, currentUser.username);
+
+    // Debounce background sync to Supabase
+    const timer = setTimeout(async () => {
+      setIsCloudSyncing(true);
+      try {
+        await saveAppDataToSupabase(data, currentUser.username);
+      } catch (err) {
+        console.warn('Lỗi đồng bộ nền Supabase:', err);
+      } finally {
+        setIsCloudSyncing(false);
+      }
+    }, 1500);
+
+    return () => clearTimeout(timer);
   }, [data, currentUser]);
 
   // Keyboard shortcut: Ctrl+K or Cmd+K to trigger Quick Search
@@ -674,6 +729,8 @@ export default function App() {
         currentUser={currentUser}
         onOpenProfile={() => setIsProfileModalOpen(true)}
         onLogout={handleLogout}
+        cloudConnected={cloudConnected}
+        isCloudSyncing={isCloudSyncing}
       />
 
       {/* Main App Body */}
@@ -742,6 +799,7 @@ export default function App() {
         onResetSample={handleResetData}
         onClearData={handleClearData}
         onNotify={notify}
+        currentUsername={currentUser.username}
       />
 
       {/* Global Quick Search Modal (Ctrl + K) */}

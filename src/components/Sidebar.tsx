@@ -9,10 +9,12 @@ import {
   TrendingUp,
   MessageSquareQuote,
   BarChart3,
-  X
+  X,
+  Cloud,
 } from 'lucide-react';
 import { NavTab, AppData, UserAccount } from '../types';
 import { LogOut, User } from 'lucide-react';
+import { isSupabaseConfigured } from '../services/supabase';
 
 interface SidebarProps {
   currentTab: NavTab;
@@ -23,6 +25,7 @@ interface SidebarProps {
   currentUser: UserAccount;
   onOpenProfile: () => void;
   onLogout: () => void;
+  onOpenSupabaseModal: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -34,10 +37,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   currentUser,
   onOpenProfile,
   onLogout,
+  onOpenSupabaseModal,
 }) => {
   // Quick dynamic counts for badges
   const pendingTasksCount = data.tasks.filter((t) => t.status !== 'Đã hoàn thành').length;
   const needAttentionCount = data.students.filter((s) => s.needAttention).length;
+  const docsCount = data.documents?.length || 0;
 
   const navItems: { id: NavTab; label: string; icon: React.ElementType; badge?: string | number; badgeColor?: string }[] = [
     { id: 'overview', label: '1. Tổng quan', icon: LayoutDashboard },
@@ -61,6 +66,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     { id: 'comments', label: '8. Nhận xét', icon: MessageSquareQuote, badge: data.comments.length },
     { id: 'stats', label: '9. Thống kê', icon: BarChart3 },
+    {
+      id: 'documents',
+      label: '10. Tài liệu & Cloud',
+      icon: Cloud,
+      badge: docsCount > 0 ? docsCount : undefined,
+      badgeColor: 'bg-emerald-100 text-emerald-800',
+    },
   ];
 
   const handleItemClick = (tab: NavTab) => {
@@ -143,6 +155,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </button>
             );
           })}
+        </div>
+
+        {/* Supabase Cloud Quick Card */}
+        <div className="px-3.5 pb-2">
+          <div
+            onClick={onOpenSupabaseModal}
+            className={`p-3 rounded-2xl border transition-all cursor-pointer ${
+              isSupabaseConfigured()
+                ? 'bg-emerald-50/70 border-emerald-200/80 hover:bg-emerald-100/70'
+                : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Cloud className={`w-4 h-4 ${isSupabaseConfigured() ? 'text-emerald-600' : 'text-slate-400'}`} />
+                <span className="text-xs font-bold text-slate-800">Supabase Cloud</span>
+              </div>
+              <span className={`w-2 h-2 rounded-full ${isSupabaseConfigured() ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400'}`} />
+            </div>
+            <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+              {isSupabaseConfigured()
+                ? 'Đã đồng bộ cơ sở dữ liệu & Storage'
+                : 'Chưa kết nối Cloud. Bấm để cấu hình.'}
+            </p>
+          </div>
         </div>
 
         {/* Bottom Profile Info Box */}

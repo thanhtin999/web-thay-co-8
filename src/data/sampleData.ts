@@ -310,5 +310,35 @@ export const initialAppData: AppData = {
   grades: initialGrades,
   comments: initialComments,
   activityLogs: initialActivityLogs,
+  documents: [
+    {
+      id: 'doc-demo-01',
+      title: 'Giáo án: Thực hành Tiếng Việt - Nghĩa của từ ngữ',
+      fileName: 'GiaoAn_NguVan6_Tuan1_NghiaCuaTuNgu.docx',
+      fileSize: 452000,
+      fileType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      fileUrl: '#',
+      storagePath: 'thaytin/demo_giao_an_nguvan6.docx',
+      uploadedAt: '2026-09-15T08:30:00.000Z',
+      category: 'Giáo án',
+      classId: 'c-6a1',
+      lessonId: 'les-01',
+      note: 'Kèm phiếu bài tập nhóm 4 học sinh và rubric chấm điểm'
+    },
+    {
+      id: 'doc-demo-02',
+      title: 'Đề kiểm tra đọc hiểu văn bản: Thánh Gióng',
+      fileName: 'DeKiemTra_DocHieu_ThanhGiong_Lop6.pdf',
+      fileSize: 284000,
+      fileType: 'application/pdf',
+      fileUrl: '#',
+      storagePath: 'thaytin/demo_de_kiem_tra_thanh_giong.pdf',
+      uploadedAt: '2026-09-16T14:15:00.000Z',
+      category: 'Đề kiểm tra',
+      classId: 'c-6a1',
+      lessonId: 'les-01',
+      note: 'Đề gồm 4 câu trắc nghiệm và 2 câu tự luận ngắn'
+    }
+  ],
   soundEnabled: false // Âm thanh tắt mặc định theo đúng yêu cầu đề bài
 };

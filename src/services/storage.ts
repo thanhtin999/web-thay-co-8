@@ -12,6 +12,11 @@
 
 import { AppData, UserAccount } from '../types';
 import { initialAppData } from '../data/sampleData';
+import {
+  saveAccountToSupabase,
+  saveAppDataToSupabase,
+  fetchAccountsFromSupabase,
+} from './supabase';
 
 const LEGACY_STORAGE_KEY = 'tro_ly_giao_vien_duong_thanh_tin_v1';
 const USERS_STORAGE_KEY = 'tro_ly_giao_vien_users_v1';
@@ -218,10 +223,16 @@ export function registerUser(params: {
   saveUsers(updatedUsers);
   setActiveUser(newUser);
 
+  // Lưu tài khoản mới ngay lập tức lên Supabase Cloud
+  saveAccountToSupabase(newUser).catch((err) => {
+    console.warn('Lỗi lưu tài khoản mới lên Supabase:', err);
+  });
+
   // Khởi tạo dữ liệu học tập ban đầu cho user mới
   if (params.cloneSample !== false) {
     // Clone dữ liệu mẫu môn Ngữ văn
     saveUserData(cleanUsername, initialAppData);
+    saveAppDataToSupabase(initialAppData, cleanUsername).catch(() => {});
   } else {
     // Khởi tạo trống
     const emptyData: AppData = {
@@ -242,6 +253,7 @@ export function registerUser(params: {
       soundEnabled: false,
     };
     saveUserData(cleanUsername, emptyData);
+    saveAppDataToSupabase(emptyData, cleanUsername).catch(() => {});
   }
 
   return { success: true, user: newUser };
@@ -267,10 +279,13 @@ export function changePassword(
     return { success: false, error: 'Mật khẩu mới phải có tối thiểu 4 ký tự!' };
   }
 
-  const updatedUsers = users.map((u) =>
-    u.id === userId ? { ...u, password: newPass.trim() } : u
-  );
+  const updatedUser: UserAccount = { ...user, password: newPass.trim() };
+  const updatedUsers = users.map((u) => (u.id === userId ? updatedUser : u));
   saveUsers(updatedUsers);
+
+  // Đồng bộ mật khẩu mới lên Supabase
+  saveAccountToSupabase(updatedUser).catch(() => {});
+
   return { success: true };
 }
 
@@ -303,6 +318,9 @@ export function updateUserProfile(
   if (activeUser && activeUser.id === userId) {
     setActiveUser(updatedUser);
   }
+
+  // Đồng bộ thông tin hồ sơ lên Supabase
+  saveAccountToSupabase(updatedUser).catch(() => {});
 
   return { success: true, user: updatedUser };
 }
