@@ -11,7 +11,8 @@ import {
   BarChart3,
   X
 } from 'lucide-react';
-import { NavTab, AppData } from '../types';
+import { NavTab, AppData, UserAccount } from '../types';
+import { LogOut, User } from 'lucide-react';
 
 interface SidebarProps {
   currentTab: NavTab;
@@ -19,6 +20,9 @@ interface SidebarProps {
   data: AppData;
   isOpenMobile: boolean;
   onCloseMobile: () => void;
+  currentUser: UserAccount;
+  onOpenProfile: () => void;
+  onLogout: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -27,6 +31,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   data,
   isOpenMobile,
   onCloseMobile,
+  currentUser,
+  onOpenProfile,
+  onLogout,
 }) => {
   // Quick dynamic counts for badges
   const pendingTasksCount = data.tasks.filter((t) => t.status !== 'Đã hoàn thành').length;
@@ -139,15 +146,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Bottom Profile Info Box */}
-        <div className="p-4 border-t border-slate-100 bg-slate-50/70">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-800 font-bold text-sm flex items-center justify-center shrink-0 border border-blue-200">
-              DT
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs font-bold text-slate-800 truncate">Thầy Dương Thành Tín</p>
-              <p className="text-[11px] text-slate-500 truncate">Ngữ văn • THCS Phan Bội Châu</p>
-            </div>
+        <div className="p-3.5 border-t border-slate-100 bg-slate-50/80">
+          <div className="flex items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={onOpenProfile}
+              className="flex items-center gap-2.5 min-w-0 text-left hover:opacity-85 transition-opacity flex-1 cursor-pointer"
+              title="Xem & chỉnh sửa hồ sơ giáo viên"
+            >
+              <div className="w-9 h-9 rounded-xl bg-blue-600 text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-xs">
+                {currentUser.username.slice(0, 2).toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-slate-800 truncate">{currentUser.fullName}</p>
+                <p className="text-[11px] text-slate-500 font-mono truncate">@{currentUser.username}</p>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={onLogout}
+              className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer shrink-0"
+              title="Đăng xuất"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </aside>

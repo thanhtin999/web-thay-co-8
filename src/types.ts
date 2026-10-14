@@ -91,6 +91,20 @@ export interface AppData {
   soundEnabled: boolean;
 }
 
+export interface UserAccount {
+  id: string;
+  username: string; // Tên đăng nhập (e.g. 'thaytin', 'thanhtin')
+  password: string; // Mật khẩu
+  fullName: string; // Họ và tên giáo viên (e.g. 'Thầy Dương Thành Tín')
+  school: string; // Đơn vị trường học (e.g. 'THCS Phan Bội Châu')
+  subject: string; // Môn giảng dạy (e.g. 'Ngữ văn THCS')
+  email?: string;
+  phone?: string;
+  avatarColor?: string; // Mã màu hoặc tên màu avatar
+  createdAt: string;
+  lastLogin?: string;
+}
+
 export type NavTab = 
   | 'overview' 
   | 'classes' 
@@ -101,3 +115,4 @@ export type NavTab =
   | 'progress' 
   | 'comments' 
   | 'stats';
+
