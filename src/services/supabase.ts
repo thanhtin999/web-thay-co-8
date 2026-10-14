@@ -33,6 +33,20 @@ export const supabase: SupabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON
   },
 });
 
+/**
+ * Kiểm tra xem Supabase đã được cấu hình URL và API Key hợp lệ hay chưa
+ */
+export function isSupabaseConfigured(): boolean {
+  return Boolean(
+    SUPABASE_URL &&
+    SUPABASE_ANON_KEY &&
+    SUPABASE_URL.startsWith('http') &&
+    SUPABASE_URL !== 'MY_SUPABASE_URL'
+  );
+}
+
+export const SUPABASE_CONFIGURED = isSupabaseConfigured();
+
 export interface SupabaseSyncStatus {
   connected: boolean;
   tableReady: boolean;
